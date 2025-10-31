@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Inventaris</title>
+<link rel="icon" type="image/png" href="https://i.imgur.com/4QKd4ky.png">
+<style>
+  :root {
+    --bg-color: #f6f8fb;
+    --primary-color: #4a90e2;
+    --sidebar-width: 220px;
+    --text-color: #333;
+  }
+
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--bg-color);
+    display: flex;
+  }
+
+  .sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--primary-color);
+    color: white;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .sidebar h2 { margin-top: 0; }
+  .sidebar ul { list-style: none; padding: 0; }
+  .sidebar li { margin: 10px 0; cursor: pointer; }
+  .sidebar li:hover { text-decoration: underline; }
+  .sidebar .submenu { display: none; margin-left: 15px; }
+
+  .main { flex: 1; padding: 20px; }
+  .header { font-size: 24px; margin-bottom: 20px; }
+  .content { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+
+  .popup {
+    display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); background-color: white;
+    border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    padding: 20px; z-index: 1000; width: 300px;
+  }
+  .popup button { margin-top: 10px; padding: 8px 12px; background-color: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer; }
+  .overlay { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 500; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>Menu</h2>
+  <ul>
+    <li onclick="showContent('Dashboard')">Dashboard</li>
+    <li onclick="showContent('Barang Masuk')">Barang Masuk</li>
+    <li onclick="showContent('Barang Keluar')">Barang Keluar</li>
+    <li onclick="toggleSubmenu('stokSubmenu')">Stok ▾
+      <ul class="submenu" id="stokSubmenu">
+        <li onclick="showContent('Stok Tersedia')">Stok Tersedia</li>
+        <li onclick="showContent('Stok Hampir Habis')">Stok Hampir Habis</li>
+      </ul>
+    </li>
+    <li onclick="toggleSubmenu('historySubmenu')">History ▾
+      <ul class="submenu" id="historySubmenu">
+        <li onclick="showContent('History Barang Masuk')">Barang Masuk</li>
+        <li onclick="showContent('History Barang Keluar')">Barang Keluar</li>
+      </ul>
+    </li>
+    <li onclick="showPopup('Laporan')">Laporan</li>
+  </ul>
+</div>
+
+<div class="main">
+  <div class="header">Dashboard Inventaris</div>
+  <div class="content" id="mainContent">
+    Selamat datang di dashboard inventaris. Pilih menu di sidebar untuk memulai.
+  </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="popup" id="popup">
+  <div id="popupContent">Ini pop-up!</div>
+  <button onclick="closePopup()">Tutup</button>
+</div>
+
+<script>
+  function toggleSubmenu(id) {
+    const submenu = document.getElementById(id);
+    submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function showContent(text) {
+    const main = document.getElementById('mainContent');
+    main.innerHTML = `<h3>${text}</h3><p>Memuat data...</p>`;
+
+    // Ambil data dari Apps Script, tetap aman karena tidak mengubah script
+    if (text.includes('Barang Masuk')) fetchData('BarangMasuk');
+    else if (text.includes('Barang Keluar')) fetchData('BarangKeluar');
+    else if (text.includes('Stok Tersedia')) fetchData('Stok');
+    else if (text.includes('Stok Hampir Habis')) fetchData('StokHampirHabis');
+    else if (text.includes('History')) fetchData(text.replace('History ', ''));
+  }
+
+  function fetchData(sheetName) {
+    // Panggil Google Apps Script function getSheetData(sheetName)
+    google.script.run.withSuccessHandler(renderTable).getSheetData(sheetName);
+  }
+
+  function renderTable(data) {
+    if (!data.length) {
+      document.getElementById('mainContent').innerHTML = '<p>Tidak ada data.</p>';
+      return;
+    }
+
+    let table = '<table border="1" cellpadding="6" cellspacing="0"><tr>';
+    Object.keys(data[0]).forEach(key => table += `<th>${key}</th>`);
+    table += '</tr>';
+
+    data.forEach(row => {
+      table += '<tr>';
+      Object.values(row).forEach(val => table += `<td>${val}</td>`);
+      table += '</tr>';
+    });
+    table += '</table>';
+
+    document.getElementById('mainContent').innerHTML = table;
+  }
+
+  function showPopup(text) {
+    document.getElementById('popupContent').innerText = `Ini menu ${text}`;
+    document.getElementById('popup').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+  }
+
+  function closePopup() {
+    document.getElementById('popup').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+  }
+</script>
+
+</body>
+</html>
